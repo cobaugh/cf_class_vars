@@ -1,0 +1,93 @@
+bundle common class_vars {
+	classes:
+		"has_class_var_$(c_v_keys)";
+
+	vars:
+		any::
+			##
+			## class_vars
+			##
+			"c_v_files_any" slist => findfiles(
+				"$(g.class_vars)/any.json", 
+				"$(g.class_vars)/**/any.json",
+				"$(g.class_vars)/any.yaml", 
+				"$(g.class_vars)/**/any.yaml"
+			);
+			"c_v_files_group" slist => findfiles(
+				"$(g.class_vars)/group_*.json", 
+				"$(g.class_vars)/**/group_*.json",
+				"$(g.class_vars)/group_*.yaml", 
+				"$(g.class_vars)/**/group_*.yaml"
+			);
+			"c_v_files_misc" slist => findfiles(
+				"$(g.class_vars)/*.json", 
+				"$(g.class_vars)/**/*.json",
+				"$(g.class_vars)/*.yaml", 
+				"$(g.class_vars)/**/*.yaml"
+			);
+			"c_v_files_host" slist => findfiles(
+				"$(g.class_vars)/$(sys.fqhost).json",
+				"$(g.class_vars)/**/$(sys.fqhost).json",
+				"$(g.class_vars)/$(sys.fqhost).yaml",
+				"$(g.class_vars)/**/$(sys.fqhost).yaml"
+			);
+		
+			# filter out group_* and any files from c_v_files_misc
+			"c_v_files_misc_filtered" slist => filter(".*/($(sys.fqhost)|any|group_.*)\.(json|yaml)", "c_v_files_misc", "true", "true", "1000");
+
+			# initialize the any/group/host merged data containers
+			"c_v_merged_any" data => "{}";
+			"c_v_merged_misc" data => "{}";
+			"c_v_merged_group" data => "{}";
+			"c_v_merged_host" data => "{}";
+
+			# read in the group_* files and merge them
+			"c_v_merged_group" 
+				data => mergedata(
+					"c_v_merged_group",
+					data_expand(readdata("$(c_v_files_group)", "auto"))
+				),
+				ifvarclass => regex_replace( regex_replace("$(c_v_files_group)", "$(g.class_vars)/", "", "T"), ".json|.yaml", "", "T");
+			
+			# read in the misc files and merge them
+			"c_v_merged_misc" 
+				data => mergedata(
+					"c_v_merged_misc",
+					data_expand(readdata("$(c_v_files_misc_filtered)", "auto"))
+				),
+				ifvarclass => regex_replace( regex_replace("$(c_v_files_misc)", "$(g.class_vars)/", "", "T"), ".json|.yaml", "", "T");
+
+			# read in the any files and merge them	
+			"c_v_merged_any" 
+				data => mergedata(
+					"c_v_merged_any",
+					data_expand(readdata("$(c_v_files_any)", "auto"))
+				);
+			"c_v_merged_host" 
+				data => mergedata(
+					"c_v_merged_host",
+					data_expand(readdata("$(c_v_files_host)", "auto"))
+				);
+
+			# get the keys for each of the stored data containers, indexed by filename
+			"c_v_keys_any" slist => getindices("c_v_merged_any");
+			"c_v_keys_misc" slist => getindices("c_v_merged_misc");
+			"c_v_keys_group" slist => getindices("c_v_merged_group");
+			"c_v_keys_host" slist => getindices("c_v_merged_host");
+
+			# merge the containers in order of precedence
+			"c_v_merged"
+				data => mergedata(
+					"c_v_merged_any",
+					"c_v_merged_misc",
+					"c_v_merged_group",
+					"c_v_merged_host"
+				);
+
+			# get top-level keys
+			"c_v_keys" slist => getindices("c_v_merged");
+			"c_v_keys_canon[$(c_v_keys)]" string => canonify($(c_v_keys));
+
+			# set vars.$(key) based on $(c_v_keys)
+			"$(c_v_keys_canon[$(c_v_keys)])" data => @(c_v_merged[$(c_v_keys)]);
+}
