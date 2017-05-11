@@ -1,0 +1,3 @@
+[submodule "tests/cfengine-tap"]
+	path = tests/cfengine-tap
+	url = https://github.com/brontolinux/cfengine-tap.git
