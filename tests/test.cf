@@ -1,0 +1,14 @@
+body common control {
+	inputs => {
+		"cfengine-tap/TAP.cf",
+		"../class_vars.cf"
+	};
+	bundlesequence => { "test" };
+}
+
+bundle agent test {
+	vars:
+		"test_bundles" slist => bundlesmatching(".*", "unittest");
+	methods:
+		"test_$(test_bundles)" usebundle => $(test_bundles);
+}

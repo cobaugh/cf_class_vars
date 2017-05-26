@@ -91,3 +91,11 @@ bundle common class_vars {
 			# set vars.$(key) based on $(c_v_keys)
 			"$(c_v_keys_canon[$(c_v_keys)])" data => @(c_v_merged[$(c_v_keys)]);
 }
+
+bundle agent class_vars_test {
+	meta:
+		"description" string => "This tests bundle common class_vars";
+		"tags" slist => { "unittest" }; 
+
+}
+
