@@ -1,7 +1,4 @@
-bundle common class_vars {
-	classes:
-		"has_class_var_$(c_v_keys)";
-
+bundle agent class_vars {
 	vars:
 		any::
 			##
@@ -55,7 +52,7 @@ bundle common class_vars {
 					"c_v_merged_misc",
 					data_expand(readdata("$(c_v_files_misc_filtered)", "auto"))
 				),
-				ifvarclass => regex_replace( regex_replace("$(c_v_files_misc)", "$(g.class_vars)/", "", "T"), ".json|.yaml", "", "T");
+				ifvarclass => regex_replace( regex_replace("$(c_v_files_misc_filtered)", "$(g.class_vars)/", "", "T"), ".json|.yaml", "", "T");
 
 			# read in the any files and merge them	
 			"c_v_merged_any" 
@@ -88,14 +85,11 @@ bundle common class_vars {
 			"c_v_keys" slist => getindices("c_v_merged");
 			"c_v_keys_canon[$(c_v_keys)]" string => canonify($(c_v_keys));
 
-			# set vars.$(key) based on $(c_v_keys)
+			# set class_vars.$(key) based on $(c_v_keys)
 			"$(c_v_keys_canon[$(c_v_keys)])" data => @(c_v_merged[$(c_v_keys)]);
-}
 
-bundle agent class_vars_test {
-	meta:
-		"description" string => "This tests bundle common class_vars";
-		"tags" slist => { "unittest" }; 
+	classes:
+		"has_cv_$(c_v_keys)"
+			scope => "namespace";
 
 }
-
